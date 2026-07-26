@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commission by yushazo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Mitr', sans-serif; }
+    </style>
+</head>
+<body class="bg-pink-50/50 text-gray-700 min-h-screen py-8 px-4">
+
+    <!-- แถบปุ่มลับสำหรับเจ้าของร้าน (มุมขวาบน) -->
+    <div class="max-w-xl mx-auto flex justify-end mb-2">
+        <button onclick="toggleAdminMode()" id="admin-toggle-btn" class="text-xs text-pink-400 hover:text-pink-600 bg-white/80 px-2.5 py-1 rounded-full border border-pink-100 shadow-sm transition">
+            🔒 สำหรับนักวาด
+        </button>
+    </div>
+
+    <div class="max-w-xl mx-auto space-y-4">
+
+        <!-- 1. HEADER CARD -->
+        <div class="bg-white rounded-2xl p-6 text-center border-2 border-pink-100 shadow-sm relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-pink-100/50 rounded-full blur-xl"></div>
+            <h1 class="text-xl font-bold text-pink-500 tracking-wide">Commission by yushazo</h1>
+            <p class="text-sm text-pink-400 mt-1">Welcome & Thank you 🌷</p>
+        </div>
+
+        <!-- 2. ARTIST NOTE CARD -->
+        <div class="bg-white rounded-2xl p-5 border-2 border-pink-100 shadow-sm space-y-3 relative">
+            <h2 class="font-bold text-gray-800 text-base flex items-center gap-2">
+                📢 Artist Note
+            </h2>
+            <div class="space-y-2 text-xs md:text-sm text-gray-600 pl-1">
+                <p class="flex items-center gap-2">🌸 <span id="note-exam">ตอนนี้ติดสอบถึงวันที่ 15 ก.ค.</span></p>
+                <p class="flex items-center gap-2">🎨 <span>เวลาทำงาน : 18:00 - 23:00</span></p>
+                <p class="flex items-center gap-2">💌 <span>ตอบแชทภายใน 24 ชั่วโมง</span></p>
+                <p class="flex items-center gap-2">📅 <span>อัปเดตคิวทุกวันอาทิตย์</span></p>
+            </div>
+            <!-- ปุ่มแก้ Note (โชว์เฉพาะ Admin) -->
+            <button onclick="editNote()" class="admin-only hidden absolute top-4 right-4 text-xs text-pink-400 hover:underline">✏️ แก้ไข</button>
+        </div>
+
+        <!-- แท็บสลับหน้า (โชว์เฉพาะ Admin) -->
+        <div id="admin-tabs" class="hidden bg-white/80 p-1.5 rounded-xl border border-pink-100 flex gap-2">
+            <button onclick="switchTab('my-jobs')" id="tab-my-jobs" class="flex-1 py-1.5 text-xs font-medium rounded-lg bg-pink-400 text-white shadow-sm">
+                🎨 คิวที่เราต้องวาด (ลูกค้าจ้างเรา)
+            </button>
+            <button onclick="switchTab('hired-jobs')" id="tab-hired-jobs" class="flex-1 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:bg-white">
+                🛍️ คิวที่เราไปจ้างคนอื่น
+            </button>
+        </div>
+
+        <!-- ================= SELLER VIEW (คิวงานของเรา) ================= -->
+        <div id="seller-section" class="space-y-4">
+            <!-- 3. SEARCH QUEUE -->
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-pink-300 text-sm"></i>
+                <input type="text" id="search-input" oninput="render()" placeholder="🔎 Search Queue (ค้นหาชื่อลูกค้า/เลขคิว...)" 
+                    class="w-full pl-10 pr-4 py-2.5 bg-white border-2 border-pink-100 rounded-xl text-sm focus:outline-none focus:border-pink-300 placeholder-pink-300 shadow-sm">
+            </div>
+
+            <!-- 4. QUEUE GRID (การ์ดคิวงาน) -->
+            <div id="queue-grid" class="grid grid-cols-2 gap-3">
+                <!-- การ์ดคิวจะสร้างจาก JS ตรงนี้ -->
+            </div>
+
+            <!-- ปุ่มเพิ่มคิว (โชว์เฉพาะ Admin) -->
+            <div class="admin-only hidden text-center pt-2">
+                <button onclick="toggleAddModal()" class="bg-pink-400 hover:bg-pink-500 text-white font-medium px-6 py-2.5 rounded-xl text-sm shadow-sm transition flex items-center gap-2 mx-auto">
+                    <i class="fa-solid fa-plus"></i> เพิ่มคิวงานใหม่
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= BUYER VIEW (งานที่เราไปจ้างคนอื่น) ================= -->
+        <div id="buyer-section" class="hidden space-y-3">
+            <div class="flex justify-between items-center px-1">
+                <h3 class="text-sm font-bold text-gray-700">รายชื่อที่เราไปสั่งวาดไว้</h3>
+                <button onclick="toggleBuyerModal()" class="text-xs bg-indigo-400 text-white px-3 py-1.5 rounded-lg">＋ บันทึกงานจ้าง</button>
+            </div>
+            <div id="buyer-list" class="space-y-2"></div>
+        </div>
+
+    </div>
+
+    <!-- MODAL POPUP: เพิ่มคิวใหม่ (Admin) -->
+    <div id="add-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-5 space-y-4 shadow-xl">
+            <h3 class="font-bold text-gray-800 text-center border-b pb-2">＋ เพิ่มคิวงานใหม่</h3>
+            <form onsubmit="addNewQueue(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-gray-600 mb-1">ชื่อลูกค้า (เช่น @Alice)</label>
+                    <input type="text" id="add-customer" required class="w-full border rounded-lg p-2 focus:outline-pink-400">
+                </div>
+                <div>
+                    <label class="block text-gray-600 mb-1">ประเภทงาน (เช่น Half Body / Chibi)</label>
+                    <input type="text" id="add-type" required class="w-full border rounded-lg p-2 focus:outline-pink-400">
+                </div>
+                <div>
+                    <label class="block text-gray-600 mb-1">สถานะงาน</label>
+                    <select id="add-status" class="w-full border rounded-lg p-2 focus:outline-pink-400">
+                        <option value="🩷 รอคิว">🩷 รอคิว</option>
+                        <option value="💜 กำลังทำ">💜 กำลังทำ</option>
+                        <option value="✨ เสร็จแล้ว">✨ เสร็จแล้ว</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-600 mb-1">ความคืบหน้า (%)</label>
+                    <input type="number" id="add-progress" min="0" max="100" value="0" required class="w-full border rounded-lg p-2 focus:outline-pink-400">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="toggleAddModal()" class="flex-1 bg-gray-100 py-2 rounded-lg text-gray-600">ยกเลิก</button>
+                    <button type="submit" class="flex-1 bg-pink-400 text-white py-2 rounded-lg font-medium">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // เช็คว่าอยู่ในโหมด Admin หรือไม่
+        const urlParams = new URLSearchParams(window.location.search);
+        let isAdmin = urlParams.get('admin') === 'true';
+
+        // ฐานข้อมูลเริ่มต้น
+        let defaultData = {
+            seller: [
+                { id: 1, queueNum: '01', name: '@Alice', type: 'Half Body', progress: 60, status: '💜 กำลังทำ' },
+                { id: 2, queueNum: '02', name: '@Mika', type: 'Chibi', progress: 20, status: '🩷 รอคิว' }
+            ],
+            buyer: [
+                { id: 101, artist: '@Artist_A', type: 'Full Scale', status: 'รอสเก็ตช์' }
+            ]
+        };
+
+        if (!localStorage.getItem('yushazo_db')) {
+            localStorage.setItem('yushazo_db', JSON.stringify(defaultData));
+        }
+
+        function getDB() { return JSON.parse(localStorage.getItem('yushazo_db')); }
+        function saveDB(db) { localStorage.setItem('yushazo_db', JSON.stringify(db)); render(); }
+
+        // สลับโหมด Admin ด้วยรหัสผ่านง่ายๆ หรือปุ่มกด
+        function toggleAdminMode() {
+            if(!isAdmin) {
+                let pass = prompt("กรุณากรอกรหัสผ่านเจ้าของร้าน (หรือพิมพ์ admin):");
+                if(pass === "admin" || pass === "1234") {
+                    isAdmin = true;
+                    alert("ยินดีต้อนรับคุณ yushazo! เข้าสู่โหมดแก้ไขข้อมูลแล้ว");
+                } else {
+                    alert("รหัสผ่านไม่ถูกต้อง!");
+                }
+            } else {
+                isAdmin = false;
+            }
+            render();
+        }
+
+        function toggleAddModal() {
+            document.getElementById('add-modal').classList.toggle('hidden');
+        }
+
+        function addNewQueue(e) {
+            e.preventDefault();
+            const db = getDB();
+            const nextNum = String(db.seller.length + 1).padStart(2, '0');
+            
+            db.seller.push({
+                id: Date.now(),
+                queueNum: nextNum,
+                name: document.getElementById('add-customer').value,
+                type: document.getElementById('add-type').value,
+                status: document.getElementById('add-status').value,
+                progress: Number(document.getElementById('add-progress').value)
+            });
+
+            saveDB(db);
+            toggleAddModal();
+            e.target.reset();
+        }
+
+        function deleteQueue(id) {
+            if(confirm("ต้องการลบคิวนี้ใช่ไหม?")) {
+                const db = getDB();
+                db.seller = db.seller.filter(q => q.id !== id);
+                saveDB(db);
+            }
+        }
+
+        function updateProgress(id) {
+            if(!isAdmin) return;
+            const db = getDB();
+            const item = db.seller.find(q => q.id === id);
+            const newProg = prompt(`แก้ไข % ความคืบหน้าของ ${item.name}:`, item.progress);
+            if(newProg !== null) {
+                item.progress = Math.min(100, Math.max(0, Number(newProg)));
+                if(item.progress === 100) item.status = "✨ เสร็จแล้ว";
+                else if(item.progress > 0) item.status = "💜 กำลังทำ";
+                saveDB(db);
+            }
+        }
+
+        function switchTab(tab) {
+            document.getElementById('seller-section').classList.toggle('hidden', tab !== 'my-jobs');
+            document.getElementById('buyer-section').classList.toggle('hidden', tab !== 'hired-jobs');
+            document.getElementById('tab-my-jobs').className = tab === 'my-jobs' ? "flex-1 py-1.5 text-xs font-medium rounded-lg bg-pink-400 text-white shadow-sm" : "flex-1 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:bg-white";
+            document.getElementById('tab-hired-jobs').className = tab === 'hired-jobs' ? "flex-1 py-1.5 text-xs font-medium rounded-lg bg-indigo-400 text-white shadow-sm" : "flex-1 py-1.5 text-xs font-medium rounded-lg text-gray-500 hover:bg-white";
+        }
+
+        // ฟังก์ชันวาดหลอดดาว/เกจความคืบหน้าแบบ Text █████░░
+        function makeProgressBar(percent) {
+            const totalBlocks = 7;
+            const filledBlocks = Math.round((percent / 100) * totalBlocks);
+            const emptyBlocks = totalBlocks - filledBlocks;
+            return '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
+        }
+
+        function render() {
+            const db = getDB();
+            const searchText = document.getElementById('search-input').value.toLowerCase();
+
+            // เรนเดอร์การ์ดคิวงาน (Seller)
+            const queueGrid = document.getElementById('queue-grid');
+            const filteredSeller = db.seller.filter(q => q.name.toLowerCase().includes(searchText) || q.queueNum.includes(searchText));
+
+            queueGrid.innerHTML = filteredSeller.map(q => `
+                <div class="bg-white rounded-2xl p-4 border-2 border-pink-100 shadow-sm hover:border-pink-200 transition relative space-y-2">
+                    ${isAdmin ? `<button onclick="deleteQueue(${q.id})" class="absolute top-2 right-2 text-gray-300 hover:text-red-400 text-xs"><i class="fa-solid fa-xmark"></i></button>` : ''}
+                    
+                    <div class="text-xs font-semibold text-pink-400">Queue #${q.queueNum}</div>
+                    <div class="font-bold text-gray-800 text-sm truncate">${q.name}</div>
+                    <div class="text-xs text-gray-400">${q.type}</div>
+                    
+                    <!-- Progress Bar -->
+                    <div onclick="updateProgress(${q.id})" class="${isAdmin ? 'cursor-pointer hover:bg-pink-50 p-1 rounded' : ''}">
+                        <div class="text-[10px] font-mono tracking-tighter text-pink-400">${makeProgressBar(q.progress)} ${q.progress}%</div>
+                    </div>
+
+                    <div class="text-xs font-medium pt-1">${q.status}</div>
+                </div>
+            `).join('');
+
+            // ปรับแต่งหน้าตา Admin vs Customer
+            const adminEls = document.querySelectorAll('.admin-only');
+            adminEls.forEach(el => el.classList.toggle('hidden', !isAdmin));
+            document.getElementById('admin-tabs').classList.toggle('hidden', !isAdmin);
+
+            document.getElementById('admin-toggle-btn').innerText = isAdmin ? '🔓 โหมดเจ้าของร้าน (เปิดอยู่)' : '🔒 สำหรับนักวาด';
+        }
+
+        render();
+    </script>
+</body>
+</html>
