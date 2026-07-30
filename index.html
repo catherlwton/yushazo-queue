@@ -13,7 +13,7 @@
 </head>
 <body class="bg-pink-50/50 text-gray-700 min-h-screen py-8 px-4">
 
-    <!-- แถบเครื่องมือสำหรับเจ้าของร้าน (จะซ่อนอัตโนมัติเมื่อลูกค้าเปิด) -->
+    <!-- แถบเครื่องมือสำหรับเจ้าของร้าน -->
     <div id="admin-tools" class="max-w-xl mx-auto flex justify-between items-center mb-4">
         <span class="text-xs font-bold text-pink-500 bg-white px-3 py-1 rounded-full border border-pink-100 shadow-sm">
             👑 โหมดเจ้าของร้าน
@@ -45,15 +45,11 @@
                 <h2 class="font-bold text-gray-800 text-base flex items-center gap-2">
                     📢 Artist Note
                 </h2>
-                <!-- ปุ่มกดแก้ไข Note (โชว์เฉพาะ Admin) -->
                 <button id="admin-edit-note-btn" onclick="editArtistNote()" class="text-xs text-pink-500 hover:text-pink-600 font-medium bg-pink-50 px-2.5 py-1 rounded-lg border border-pink-100 transition">
                     ✏️ แก้ไขข้อความ
                 </button>
             </div>
-            
-            <div id="artist-note-content" class="space-y-2 text-xs md:text-sm text-gray-600 pl-1">
-                <!-- ข้อความส่วนนี้จะถูกโหลดจากสคริปต์ -->
-            </div>
+            <div id="artist-note-content" class="space-y-2 text-xs md:text-sm text-gray-600 pl-1"></div>
         </div>
 
         <!-- แท็บสลับหน้า -->
@@ -66,9 +62,8 @@
             </button>
         </div>
 
-        <!-- ================= SELLER VIEW (คิวงานของเรา) ================= -->
+        <!-- SELLER VIEW -->
         <div id="seller-section" class="space-y-4">
-            <!-- SEARCH QUEUE -->
             <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-pink-300 text-sm"></i>
                 <input type="text" id="search-input" oninput="render()" placeholder="🔎 Search Queue (ค้นหาชื่อลูกค้า/เลขคิว...)" 
@@ -78,7 +73,6 @@
             <!-- QUEUE GRID -->
             <div id="queue-grid" class="grid grid-cols-2 gap-3"></div>
 
-            <!-- ปุ่มเพิ่มคิว -->
             <div id="admin-add-btn" class="text-center pt-2">
                 <button onclick="toggleAddModal()" class="bg-pink-400 hover:bg-pink-500 text-white font-medium px-6 py-2.5 rounded-xl text-sm shadow-sm transition flex items-center gap-2 mx-auto">
                     <i class="fa-solid fa-plus"></i> เพิ่มคิวงานใหม่
@@ -86,7 +80,7 @@
             </div>
         </div>
 
-        <!-- ================= BUYER VIEW (งานที่เราไปจ้างคนอื่น) ================= -->
+        <!-- BUYER VIEW -->
         <div id="buyer-section" class="hidden space-y-3">
             <div class="flex justify-between items-center px-1">
                 <h3 class="text-sm font-bold text-gray-700">รายชื่อที่เราไปสั่งวาดไว้</h3>
@@ -134,13 +128,12 @@
         const urlParams = new URLSearchParams(window.location.search);
         const isCustomer = urlParams.get('view') === 'customer';
 
-        // ฐานข้อมูลเริ่มต้น
         let defaultData = {
             notes: [
-                "🌸 ทำงานวัน พุธ อาทิตย์",
-                "🎨 เวลาทำงาน : 20.00-01.00",
-                "💌 งานเส้นรัฟมาก ๆ ไม่เก็บรายละเอียดเลย",
-                "📅 อัปเดตคิวในนี้ทุก ๆ วันอาทิตย์"
+                "🌸 ตอนนี้ติดสอบถึงวันที่ ...",
+                "🎨 เวลาทำงาน : 18:00 - 23:00",
+                "💌 ตอบแชทภายใน 24 ชั่วโมง",
+                "📅 อัปเดตคิวทุกวันอาทิตย์"
             ],
             seller: [
                 { id: 1, queueNum: '01', name: '@Alice', type: 'Half Body', progress: 60, status: '💜 กำลังทำ' },
@@ -157,18 +150,16 @@
 
         function getDB() { 
             let db = JSON.parse(localStorage.getItem('yushazo_db'));
-            if(!db.notes) db.notes = defaultData.notes; // กันข้อมูลเก่าไม่มี notes
+            if(!db.notes) db.notes = defaultData.notes;
             return db;
         }
         function saveDB(db) { localStorage.setItem('yushazo_db', JSON.stringify(db)); render(); }
 
-        // ฟังก์ชันแก้ไข Artist Note
         function editArtistNote() {
             if(isCustomer) return;
             const db = getDB();
             const currentNotes = db.notes.join('\n');
             const newNotesText = prompt("แก้ไข Artist Note (ขึ้นบรรทัดใหม่เพื่อแยกข้อความ):", currentNotes);
-            
             if(newNotesText !== null) {
                 db.notes = newNotesText.split('\n').filter(line => line.trim() !== '');
                 saveDB(db);
@@ -216,15 +207,44 @@
             }
         }
 
+        // ฟังก์ชันแก้ไขความคืบหน้า (%)
         function updateProgress(id) {
             if(isCustomer) return;
             const db = getDB();
             const item = db.seller.find(q => q.id === id);
-            const newProg = prompt(`แก้ไข % ความคืบหน้าของ ${item.name}:`, item.progress);
-            if(newProg !== null) {
+            const newProg = prompt(`แก้ไข % ความคืบหน้าของ ${item.name} (0 - 100):`, item.progress);
+            if(newProg !== null && newProg.trim() !== '') {
                 item.progress = Math.min(100, Math.max(0, Number(newProg)));
                 if(item.progress === 100) item.status = "✨ เสร็จแล้ว";
-                else if(item.progress > 0) item.status = "💜 กำลังทำ";
+                else if(item.progress > 0 && item.status === "🩷 รอคิว") item.status = "💜 กำลังทำ";
+                saveDB(db);
+            }
+        }
+
+        // 🌟 เพิ่มใหม่! ฟังก์ชันคลิกเปลี่ยนสถานะ (รอคิว / กำลังทำ / เสร็จแล้ว) โดยตรง
+        function updateStatus(id) {
+            if(isCustomer) return;
+            const db = getDB();
+            const item = db.seller.find(q => q.id === id);
+            
+            const choice = prompt(
+                `เปลี่ยนสถานะคิว ${item.name}:\n\n` +
+                `1. 🩷 รอคิว\n` +
+                `2. 💜 กำลังทำ\n` +
+                `3. ✨ เสร็จแล้ว\n\n` +
+                `พิมพ์ตัวเลข 1, 2 หรือ 3 แล้วกด OK:`
+            );
+
+            if(choice === '1') {
+                item.status = "🩷 รอคิว";
+            } else if(choice === '2') {
+                item.status = "💜 กำลังทำ";
+            } else if(choice === '3') {
+                item.status = "✨ เสร็จแล้ว";
+                item.progress = 100; // ปรับ 100% อัตโนมัติถ้าเลือกเสร็จแล้ว
+            }
+
+            if(['1', '2', '3'].includes(choice)) {
                 saveDB(db);
             }
         }
@@ -259,11 +279,11 @@
             const db = getDB();
             const searchText = document.getElementById('search-input').value.toLowerCase();
 
-            // 1. เรนเดอร์ Artist Note
+            // 1. Artist Note
             const noteContent = document.getElementById('artist-note-content');
             noteContent.innerHTML = db.notes.map(note => `<p class="flex items-center gap-2"><span>${note}</span></p>`).join('');
 
-            // 2. เรนเดอร์ Queue Grid (Seller)
+            // 2. Queue Grid
             const queueGrid = document.getElementById('queue-grid');
             const filteredSeller = db.seller.filter(q => q.name.toLowerCase().includes(searchText) || q.queueNum.includes(searchText));
 
@@ -275,15 +295,19 @@
                     <div class="font-bold text-gray-800 text-sm truncate">${q.name}</div>
                     <div class="text-xs text-gray-400">${q.type}</div>
                     
-                    <div onclick="updateProgress(${q.id})" class="${!isCustomer ? 'cursor-pointer hover:bg-pink-50 p-1 rounded' : ''}">
+                    <!-- กดตรงนี้เพื่อแก้ % -->
+                    <div onclick="updateProgress(${q.id})" class="${!isCustomer ? 'cursor-pointer hover:bg-pink-50 p-1 rounded transition' : ''}" title="คลิกเพื่อแก้ไข %">
                         <div class="text-[10px] font-mono tracking-tighter text-pink-400">${makeProgressBar(q.progress)} ${q.progress}%</div>
                     </div>
 
-                    <div class="text-xs font-medium pt-1">${q.status}</div>
+                    <!-- กดตรงนี้เพื่อเปลี่ยนสถานะ (รอคิว/กำลังทำ/เสร็จแล้ว) -->
+                    <div onclick="updateStatus(${q.id})" class="text-xs font-medium pt-1 ${!isCustomer ? 'cursor-pointer hover:text-pink-600 transition' : ''}" title="คลิกเพื่อเปลี่ยนสถานะ">
+                        ${q.status} ${!isCustomer ? '✏️' : ''}
+                    </div>
                 </div>
             `).join('');
 
-            // 3. เรนเดอร์ Buyer List
+            // 3. Buyer List
             const buyerList = document.getElementById('buyer-list');
             buyerList.innerHTML = db.buyer.map(b => `
                 <div class="bg-white p-3 rounded-xl border border-indigo-100 text-xs flex justify-between items-center">
@@ -295,7 +319,6 @@
                 </div>
             `).join('');
 
-            // สลับโหมด Admin vs Customer
             if (isCustomer) {
                 document.getElementById('admin-tools').style.display = 'none';
                 document.getElementById('admin-tabs').style.display = 'none';
